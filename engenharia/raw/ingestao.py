@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install tqdm
+# MAGIC %pip install tqdm lxml
 
 # COMMAND ----------
 
@@ -25,9 +25,15 @@ def date_range(date_start, date_stop):
 def import_file(fonte,tipo_arquivo, uf, ano_mes):
 
     url = f"ftp://ftp.datasus.gov.br/dissemin/publicos/{fonte}/200801_/Dados/{tipo_arquivo}{uf}{ano_mes}.dbc"
-    nome_arquivo = f"{fonte}_{tipo_arquivo}{uf}{ano_mes}.dbc"
+    file_name = f"{uf}_{ano_mes}.dbc"
+    folder_name = f"/dbfs/mnt/datalake/liga_unesp/raw/{fonte}/{tipo_arquivo}/dbc/"
 
-    urllib.request.urlretrieve(url, f"/dbfs/mnt/datalake/liga_unesp/{nome_arquivo}")
+    try:
+        urllib.request.urlretrieve(url, f"{folder_name}{file_name}")
+    
+    except urllib.error.URLError as err:
+        print(file_name, err)
+
     return True
 
 
@@ -37,6 +43,10 @@ def import_file_dates(fonte, tipo_arquivo, uf, dates):
         import_file(fonte, tipo_arquivo, uf, ano_mes)
     return True
 
+def import_file_ufs(fonte, tipo_arquivo, ufs, dates):
+    for u in tqdm(ufs):
+        import_file_dates(fonte, tipo_arquivo, u, dates)
+
 # COMMAND ----------
 
 date_start = "2021-06-01"
@@ -44,7 +54,35 @@ date_stop = "2022-09-01"
 
 fonte = "SIHSUS"
 tipo_arquivo = "RD"
-uf = "AC"
+ufs = [  'AC',
+         'AL',
+         'AP',
+         'AM',
+         'BA',
+         'CE',
+         'DF',
+         'ES',
+         'GO',
+         'MA',
+         'MT',
+         'MS',
+         'MG',
+         'PA',
+         'PB',
+         'PR',
+         'PE',
+         'PI',
+         'RJ',
+         'RN',
+         'RS',
+         'RO',
+         'RR',
+         'SC',
+         'SP',
+         'SE',
+         'TO']
+
+
 ano_meses = date_range(date_start, date_stop)
 
-import_file_dates(fonte, tipo_arquivo, uf, ano_meses)
+import_file_ufs(fonte, tipo_arquivo, ufs, ano_meses)
